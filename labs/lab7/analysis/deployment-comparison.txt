@@ -1,0 +1,63 @@
+=== Functionality Test ===
+Default: HTTP 200
+Hardened: HTTP 200
+Production: HTTP 200
+
+=== Resource Usage ===
+NAME               CPU %     MEM USAGE / LIMIT     MEM %
+juice-default      0.76%     168.6MiB / 3.828GiB   4.30%
+juice-hardened     0.37%     92.64MiB / 512MiB     18.09%
+juice-production   1.05%     95.71MiB / 512MiB     18.69%
+
+=== Security Configurations via docker inspect ===
+
+Container: juice-default
+CapDrop: none
+CapAdd: none (default Linux capabilities)
+SecurityOpt: none
+Memory: 0 (unlimited)
+MemorySwap: 0 (unlimited)
+NanoCPUs: 0 (unlimited)
+PIDs: 0 (unlimited)
+Restart: no
+Privileged: false
+User: 65532 (non-root - distroless nonroot)
+
+Container: juice-hardened
+CapDrop: [ALL]
+CapAdd: none
+SecurityOpt: [no-new-privileges]
+Memory: 536870912 (512MiB)
+MemorySwap: 1073741824 (1GiB - default 2x memory)
+NanoCPUs: 1000000000 (1.0 CPU)
+PIDs: 0 (unlimited)
+Restart: no
+Privileged: false
+User: 65532 (non-root)
+
+Container: juice-production
+CapDrop: [ALL]
+CapAdd: [CAP_NET_BIND_SERVICE]
+SecurityOpt: [no-new-privileges]
+Memory: 536870912 (512MiB)
+MemorySwap: 536870912 (512MiB - no swap allowed)
+NanoCPUs: 1000000000 (1.0 CPU)
+PIDs: 100
+Restart: on-failure (max retries: 3)
+Privileged: false
+User: 65532 (non-root)
+
+=== Summary Comparison Table ===
+Security Feature        | Default        | Hardened         | Production
+------------------------|----------------|------------------|---------------------------
+Capabilities dropped    | none           | ALL              | ALL
+Capabilities added      | default set    | none             | NET_BIND_SERVICE only
+no-new-privileges       | No             | Yes              | Yes
+Memory limit            | unlimited      | 512MiB           | 512MiB
+Swap limit              | unlimited      | 1GiB (2x mem)    | 512MiB (no swap)
+CPU limit               | unlimited      | 1.0 CPU          | 1.0 CPU
+PID limit               | unlimited      | unlimited        | 100 processes
+Restart policy          | none           | none             | on-failure (3 retries)
+Running user            | 65532 (nonroot)| 65532 (nonroot)  | 65532 (nonroot)
+Privileged mode         | false          | false            | false
+Seccomp profile         | default        | default          | default (Docker built-in)
